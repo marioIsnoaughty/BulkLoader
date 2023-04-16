@@ -6,6 +6,7 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 from pyrogram.errors import BadRequest
 
+
 # Configs
 API_HASH = os.environ['API_HASH'] # Api hash
 APP_ID = int(os.environ['APP_ID']) # Api id/App id
@@ -148,6 +149,7 @@ async def help(bot, update):
     await update.reply_text(f"How to use BulkLoader?!\n\n2 Methods:\n- send command /link and then send urls, separated by new line.\n- send txt file (links), separated by new line.", True, reply_markup=InlineKeyboardMarkup(START_BUTTONS))
 
 
+
 @xbot.on_message(filters.command('link') & OWNER_FILTER & filters.private)
 async def linkloader(bot, update):
     xlink = await bot.ask(update.chat.id, 'Send your links, separated each link by new line', filters='text', timeout=300)
@@ -155,29 +157,37 @@ async def linkloader(bot, update):
         return await xlink.reply('You wanna upload files as?', True, reply_markup=InlineKeyboardMarkup(CB_BUTTONS))
     elif BUTTONS == False:
         pass
+    
     dirs = f'./downloads/{update.from_user.id}'
     if not os.path.isdir(dirs):
         os.makedirs(dirs)
+    
     output_filename = str(update.from_user.id)
     filename = f'./{output_filename}.zip'
+    
     pablo = await update.reply_text('Downloading...')
     urlx = xlink.text.split('\n')
     rm, total, up = len(urlx), len(urlx), 0
+    
     await pablo.edit_text(f"Total: {total}\nDownloaded: {up}\nDownloading: {rm}")
+    
     for url in urlx:
         download_file(url, dirs)
-        up+=1
-        rm-=1
-        try:
-            await pablo.edit_text(f"Total: {total}\nDownloaded: {up}\nDownloading: {rm}")
-        except BadRequest:
-            pass
+        up += 1
+        rm -= 1
+    
+    try:
+        await pablo.edit_text(f"Total: {total}\nDownloaded: {up}\nDownloading: {rm}")
+    except BadRequest:
+        pass
+    
     await pablo.edit_text('Uploading...')
+    
     if AS_ZIP == True:
         shutil.make_archive(output_filename, 'zip', dirs)
         start_time = time.time()
         await update.reply_document(
-            filename,
+            document=filename,
             progress=progress_for_pyrogram,
             progress_args=(
                 'Uploading...',
@@ -185,9 +195,21 @@ async def linkloader(bot, update):
                 start_time
             )
         )
-        await pablo.delete()
-        os.remove(filename)
-        shutil.rmtree(dirs)
+    else:
+        for file in os.listdir(dirs):
+            start_time = time.time()
+            await update.reply_document(
+                document=f"{dirs}/{file}",
+                progress=progress_for_pyrogram,
+                progress_args=(
+                    'Uploading...',
+                    pablo,
+                    start_time
+                )
+            )
+    
+    shutil.rmtree(dirs)
+
     elif AS_ZIP == False:
         dldirs = [i async for i in absolute_paths(dirs)]
         rm, total, up = len(dldirs), len(dldirs), 0
