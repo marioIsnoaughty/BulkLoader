@@ -195,25 +195,12 @@ async def linkloader(bot, update):
                 start_time
             )
         )
-    else:
-        for file in os.listdir(dirs):
-            start_time = time.time()
-            await update.reply_document(
-                document=f"{dirs}/{file}",
-                progress=progress_for_pyrogram,
-                progress_args=(
-                    'Uploading...',
-                    pablo,
-                    start_time
-                )
-            )
-    
-    shutil.rmtree(dirs)
-
     elif AS_ZIP == False:
         dldirs = [i async for i in absolute_paths(dirs)]
         rm, total, up = len(dldirs), len(dldirs), 0
+        
         await pablo.edit_text(f"Total: {total}\nUploaded: {up}\nUploading: {rm}")
+        
         for files in dldirs:
             start_time = time.time()
             await update.reply_document(
@@ -225,15 +212,20 @@ async def linkloader(bot, update):
                     start_time
                 )
             )
-            up+=1
-            rm-=1
+            up += 1
+            rm -= 1
+            
             try:
                 await pablo.edit_text(f"Total: {total}\nUploaded: {up}\nUploading: {rm}")
             except BadRequest:
                 pass
+            
             time.sleep(1)
+        
         await pablo.delete()
-        shutil.rmtree(dirs)
+    
+    shutil.rmtree(dirs)
+
 
 
 @xbot.on_message(filters.document & OWNER_FILTER & filters.private)
