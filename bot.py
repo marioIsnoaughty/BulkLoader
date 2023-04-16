@@ -1,7 +1,10 @@
 import os, time, math, shutil, pyromod.listen
-from urllib.parse import unquote
-from pySmartDL import SmartDL
+import math
+import time
+from pyrogram.types import Message
+from smartdl import SmartDL
 from urllib.error import HTTPError
+from urllib.parse import unquote
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 from pyrogram.errors import BadRequest
@@ -31,20 +34,17 @@ CB_BUTTONS=[
     ]
 ]
 
-# Helpers
 
-# https://github.com/SpEcHiDe/AnyDLBot
 async def progress_for_pyrogram(
-    current,
-    total,
-    ud_type,
-    message,
-    start
+    current: int,
+    total: int,
+    ud_type: str,
+    message: Message,
+    start_time: float
 ):
     now = time.time()
-    diff = now - start
+    diff = now - start_time
     if round(diff % 10.00) == 0 or current == total:
-        # if round(current / total * 100, 0) % 5 == 0:
         percentage = current * 100 / total
         speed = current / diff
         elapsed_time = round(diff) * 1000
@@ -63,7 +63,6 @@ async def progress_for_pyrogram(
             humanbytes(current),
             humanbytes(total),
             humanbytes(speed),
-            # elapsed_time if elapsed_time != '' else "0 s",
             estimated_total_time if estimated_total_time != '' else "0 s"
         )
         try:
@@ -77,9 +76,8 @@ async def progress_for_pyrogram(
             pass
 
 
-def humanbytes(size):
-    # https://stackoverflow.com/a/49361727/4723940
-    # 2**10 = 1024
+
+def humanbytes(size):    
     if not size:
         return ""
     power = 2**10
@@ -101,10 +99,10 @@ def TimeFormatter(milliseconds: int) -> str:
         ((str(minutes) + "m, ") if minutes else "") + \
         ((str(seconds) + "s, ") if seconds else "") + \
         ((str(milliseconds) + "ms, ") if milliseconds else "")
-    return tmp[:-2]
+    return tmp.rstrip(', ')
 
 
-# https://github.com/viperadnan-git/google-drive-telegram-bot/blob/main/bot/helpers/downloader.py
+
 def download_file(url, dl_path):
     try:
         dl = SmartDL(url, dl_path, progress_bar=False)
@@ -116,12 +114,11 @@ def download_file(url, dl_path):
         else:
             filename2 = unquote(filename)
         os.rename(filename, filename2)
-        return True, filename
+        return True, filename2
     except HTTPError as error:
         return False, error
 
 
-# https://github.com/MysteryBots/UnzipBot/blob/master/UnzipBot/functions.py
 async def absolute_paths(directory):
     for dirpath, _, filenames in os.walk(directory):
         for f in filenames:
@@ -225,14 +222,6 @@ async def linkloader(bot, update):
         await pablo.delete()
     
     shutil.rmtree(dirs)
-
-
-import os
-import shutil
-import time
-from pyrogram import filters
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from pyrogram.errors import BadRequest
 
 @xbot.on_message(filters.command('link') & OWNER_FILTER & filters.private)
 async def linkloader(bot, update):
